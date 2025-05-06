@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fake Apple Pay</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- iOS Web App Configuration -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-pay-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html, body {
+      height:100%; background:#000; color:#fff;
+      font-family:-apple-system,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
+    }
+    body {
+      display:flex; flex-direction:column; align-items:center; 
+      justify-content:space-between; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    }
+    .amount { margin-top:40px; font-size:72px; font-weight:200; line-height:1; }
+    .balance { margin-top:4px; font-size:14px; color:#666; }
+    .keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:0 20px; margin-top:30px; }
+    .key { width:80px; height:80px; border-radius:40px; background:#222; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; user-select:none; transition:background .1s; }
+    .key:active { background:#333; }
+    .actions { display:flex; width:100%; max-width:360px; margin-bottom:40px; gap:12px; }
+    .actions button { flex:1; padding:16px 0; font-size:17px; font-weight:600; border:none; border-radius:12px; background:#1c1c1e; color:#fff; cursor:pointer; transition:background .1s; }
+    .actions button:active { background:#2c2c2e; }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="amount" id="amountDisplay">$0</div>
+    <div class="balance">Apple Cash Balance: $0.00</div>
+  </div>
+  <div class="keypad">
+    <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+    <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+    <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+    <div class="key">.</div><div class="key">0</div><div class="key">⌫</div>
+  </div>
+  <div class="actions">
+    <button id="btnReceive">Receive</button>
+    <button id="btnSend">Send</button>
+  </div>
+  <audio id="chime" src="http://theinspiringdad.com/wp-content/uploads/2017/11/AppStore-Touch-ID-Authentication-Sound-Play-and-Download-Here.mp3" preload="auto"></audio>
+  <script>
+    const display = document.getElementById('amountDisplay');
+    const chime = document.getElementById('chime');
+    let amount = '';
+    function updateDisplay() {
+      display.textContent = amount === '' ? '$0' : '$' + amount;
+    }
+    document.querySelectorAll('.key').forEach(key => {
+      key.addEventListener('click', () => {
+        const v = key.textContent;
+        if (v === '⌫') amount = amount.slice(0, -1);
+        else if (v === '.') { if (!amount.includes('.')) amount += amount === '' ? '0.' : '.'; }
+        else { if (!(amount === '0' && v === '0')) amount += v; }
+        if (amount.includes('.')) {
+          const [i, d] = amount.split('.');
+          amount = i + (d ? '.' + d.slice(0,2) : '');
+        }
+        updateDisplay();
+      });
+    });
+    function doAction(btn) {
+      if (!amount || amount === '0') return;
+      btn.textContent = '…'; btn.disabled = true;
+      setTimeout(() => {
+        chime.currentTime = 0; chime.play();
+        btn.textContent = '✓';
+      }, 800);
+      setTimeout(() => {
+        btn.textContent = btn.id === 'btnReceive' ? 'Receive' : 'Send';
+        btn.disabled = false; amount = ''; updateDisplay();
+      }, 2000);
+    }
+    document.getElementById('btnReceive').addEventListener('click', () => doAction(document.getElementById('btnReceive')));
+    document.getElementById('btnSend').addEventListener('click', () => doAction(document.getElementById('btnSend')));
+  </script>
+</body>
+</html>
