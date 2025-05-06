@@ -16,7 +16,7 @@
       font-family:-apple-system,'SF Pro Text','SF Pro Display',system-ui,sans-serif;
     }
     body {
-      display:flex; flex-direction:column; align-items:center; 
+      display:flex; flex-direction:column; align-items:center;
       justify-content:space-between; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
     }
     .amount { margin-top:40px; font-size:72px; font-weight:200; line-height:1; }
@@ -44,20 +44,32 @@
     <button id="btnReceive">Receive</button>
     <button id="btnSend">Send</button>
   </div>
-  <audio id="chime" src="http://theinspiringdad.com/wp-content/uploads/2017/11/AppStore-Touch-ID-Authentication-Sound-Play-and-Download-Here.mp3" preload="auto"></audio>
+  <audio id="chime"
+    src="http://theinspiringdad.com/wp-content/uploads/2017/11/AppStore-Touch-ID-Authentication-Sound-Play-and-Download-Here.mp3"
+    preload="auto">
+  </audio>
   <script>
     const display = document.getElementById('amountDisplay');
+    const balanceDisplay = document.querySelector('.balance');
     const chime = document.getElementById('chime');
     let amount = '';
+    let balance = 0.00;
+
     function updateDisplay() {
       display.textContent = amount === '' ? '$0' : '$' + amount;
+      balanceDisplay.textContent = 'Apple Cash Balance: $' + balance.toFixed(2);
     }
+
     document.querySelectorAll('.key').forEach(key => {
       key.addEventListener('click', () => {
         const v = key.textContent;
-        if (v === '⌫') amount = amount.slice(0, -1);
-        else if (v === '.') { if (!amount.includes('.')) amount += amount === '' ? '0.' : '.'; }
-        else { if (!(amount === '0' && v === '0')) amount += v; }
+        if (v === '⌫') {
+          amount = amount.slice(0, -1);
+        } else if (v === '.') {
+          if (!amount.includes('.')) amount += amount === '' ? '0.' : '.';
+        } else {
+          if (!(amount === '0' && v === '0')) amount += v;
+        }
         if (amount.includes('.')) {
           const [i, d] = amount.split('.');
           amount = i + (d ? '.' + d.slice(0,2) : '');
@@ -65,20 +77,32 @@
         updateDisplay();
       });
     });
-    function doAction(btn) {
+
+    function doAction(btn, isReceive) {
       if (!amount || amount === '0') return;
-      btn.textContent = '…'; btn.disabled = true;
+      const val = parseFloat(amount);
+      btn.textContent = '…';
+      btn.disabled = true;
       setTimeout(() => {
-        chime.currentTime = 0; chime.play();
+        chime.currentTime = 0;
+        chime.play();
+        if (isReceive) balance += val;
+        else balance -= val;
         btn.textContent = '✓';
+        updateDisplay();
       }, 800);
       setTimeout(() => {
-        btn.textContent = btn.id === 'btnReceive' ? 'Receive' : 'Send';
-        btn.disabled = false; amount = ''; updateDisplay();
+        btn.textContent = isReceive ? 'Receive' : 'Send';
+        btn.disabled = false;
+        amount = '';
+        updateDisplay();
       }, 2000);
     }
-    document.getElementById('btnReceive').addEventListener('click', () => doAction(document.getElementById('btnReceive')));
-    document.getElementById('btnSend').addEventListener('click', () => doAction(document.getElementById('btnSend')));
+
+    document.getElementById('btnReceive')
+      .addEventListener('click', () => doAction(document.getElementById('btnReceive'), true));
+    document.getElementById('btnSend')
+      .addEventListener('click', () => doAction(document.getElementById('btnSend'), false));
   </script>
 </body>
 </html>
